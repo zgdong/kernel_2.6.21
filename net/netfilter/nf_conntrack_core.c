@@ -86,6 +86,7 @@ struct nf_conn nf_conntrack_untracked __read_mostly;
 EXPORT_SYMBOL_GPL(nf_conntrack_untracked);
 
 unsigned int nf_ct_log_invalid __read_mostly;
+/* global, unconfirmed conntrack */
 LIST_HEAD(unconfirmed);
 static int nf_conntrack_vmalloc __read_mostly;
 

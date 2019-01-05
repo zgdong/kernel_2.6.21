@@ -64,6 +64,7 @@ struct ip_conntrack_protocol *ip_ct_protos[MAX_IP_CT_PROTO] __read_mostly;
 static LIST_HEAD(helpers);
 unsigned int ip_conntrack_htable_size __read_mostly = 0;
 int ip_conntrack_max __read_mostly;
+/* global, conntrack hash array */
 struct list_head *ip_conntrack_hash __read_mostly;
 static struct kmem_cache *ip_conntrack_cachep __read_mostly;
 static struct kmem_cache *ip_conntrack_expect_cachep __read_mostly;
@@ -737,6 +738,7 @@ init_conntrack(struct ip_conntrack_tuple *tuple,
 }
 
 /* On success, returns conntrack ptr, sets skb->nfct and ctinfo */
+/* Key */
 static inline struct ip_conntrack *
 resolve_normal_ct(struct sk_buff *skb,
 		  struct ip_conntrack_protocol *proto,
@@ -750,11 +752,13 @@ resolve_normal_ct(struct sk_buff *skb,
 
 	IP_NF_ASSERT((skb->nh.iph->frag_off & htons(IP_OFFSET)) == 0);
 
+	/* convert skb to tuple */
 	if (!ip_ct_get_tuple(skb->nh.iph, skb, skb->nh.iph->ihl*4,
 				&tuple,proto))
 		return NULL;
 
 	/* look for tuple match */
+	/* search in hash table, return ip_conntrack_tuple_hash* */
 	h = ip_conntrack_find_get(&tuple, NULL);
 	if (!h) {
 		h = init_conntrack(&tuple, proto, skb);
@@ -763,6 +767,7 @@ resolve_normal_ct(struct sk_buff *skb,
 		if (IS_ERR(h))
 			return (void *)h;
 	}
+	/* find ip_conntrack by ip_conntrack_tuple_hash */
 	ct = tuplehash_to_ctrack(h);
 
 	/* It exists; we have (non-exclusive) reference. */
@@ -1481,6 +1486,7 @@ int __init ip_conntrack_init(void)
 		if (ip_conntrack_htable_size < 16)
 			ip_conntrack_htable_size = 16;
 	}
+	/* what is this? */
 	ip_conntrack_max = 8 * ip_conntrack_htable_size;
 
 	printk("ip_conntrack version %s (%u buckets, %d max)"
